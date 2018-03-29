@@ -15,8 +15,9 @@ uint32_t proc_count;
 
 void pick_next_proc() {
   uint32_t max_imp = 0;
+  curr_proc->age = -1;
   for ( int i = 0; i < proc_count; ++i ) {
-    ++pcb[i].age;
+    pcb[i].age += 1;
     uint32_t imp = pcb[i].age + pcb[i].priority;
     if ( imp > max_imp ) {
       max_imp = imp;
@@ -30,7 +31,6 @@ void scheduler( ctx_t *ctx ) {
   memcpy( &curr_proc->ctx, ctx, sizeof(ctx_t) );
   curr_proc->status = STATUS_READY;
 
-  // curr_proc = (curr_proc + 1) % proc_count;
   pick_next_proc();
 
   memcpy( ctx, &curr_proc->ctx, sizeof(ctx_t) );
@@ -69,7 +69,7 @@ void hilevel_handler_rst( ctx_t *ctx ) {
 
   memcpy( ctx, &pcb[0].ctx, sizeof( ctx_t ) );
   pcb[ 0 ].status = STATUS_EXECUTING;
-  curr_proc = &pcb[0]
+  curr_proc = &pcb[0];
   proc_count = 2;
 
   TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
