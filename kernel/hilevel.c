@@ -10,18 +10,31 @@
 #define PROC_LIMIT 15
 
 pcb_t pcb[PROC_LIMIT];
-uint32_t curr_proc;
+pcb_t *curr_proc;
 uint32_t proc_count;
+
+void pick_next_proc() {
+  uint32_t max_imp = 0;
+  for ( int i = 0; i < proc_count; ++i ) {
+    ++pcb[i].age;
+    uint32_t imp = pcb[i].age + pcb[i].priority;
+    if ( imp > max_imp ) {
+      max_imp = imp;
+      curr_proc = &pcb[i];
+    }
+  }
+}
 
 // Currently a round robin approach
 void scheduler( ctx_t *ctx ) {
-  memcpy( &pcb[curr_proc].ctx, ctx, sizeof(ctx_t) );
-  pcb[curr_proc].status = STATUS_READY;
+  memcpy( &curr_proc->ctx, ctx, sizeof(ctx_t) );
+  curr_proc->status = STATUS_READY;
 
-  curr_proc = (curr_proc + 1) % proc_count;
+  // curr_proc = (curr_proc + 1) % proc_count;
+  pick_next_proc();
 
-  memcpy( ctx, &pcb[curr_proc].ctx, sizeof(ctx_t) );
-  pcb[curr_proc].status = STATUS_EXECUTING;
+  memcpy( ctx, &curr_proc->ctx, sizeof(ctx_t) );
+  curr_proc->status = STATUS_EXECUTING;
 }
 
 
@@ -56,7 +69,7 @@ void hilevel_handler_rst( ctx_t *ctx ) {
 
   memcpy( ctx, &pcb[0].ctx, sizeof( ctx_t ) );
   pcb[ 0 ].status = STATUS_EXECUTING;
-  curr_proc = 0;
+  curr_proc = &pcb[0]
   proc_count = 2;
 
   TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
@@ -80,7 +93,7 @@ void hilevel_handler_irq( ctx_t *ctx ) {
 
   switch ( id ) {
     case GIC_SOURCE_TIMER0: {
-      PL011_putc( UART0, '!', true );
+      PL011_putc( UART0, '\n', true );
       scheduler( ctx );
       TIMER0->Timer1IntClr = 0x01;
       break;
