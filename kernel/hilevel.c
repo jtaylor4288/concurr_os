@@ -7,12 +7,17 @@
 
 #include "hilevel.h"
 
+// The maximum number of allowed processes. This is static as the pcb is statically allocated
 #define PROC_LIMIT 15
 
 pcb_t pcb[PROC_LIMIT];
 pcb_t *curr_proc;
 uint32_t proc_count;
 
+// Iterates through all processes to find the most important
+// Importance is determined by adding the priority and the age
+// Each process has its age incremented by 1 and the current process' is reset to 0
+// The curr_proc pointer updated to the newly chosen process
 void pick_next_proc() {
   uint32_t max_imp = 0;
   curr_proc->age = -1;
@@ -26,7 +31,7 @@ void pick_next_proc() {
   }
 }
 
-// Currently a round robin approach
+// Swaps out the current process for the new one
 void scheduler( ctx_t *ctx ) {
   memcpy( &curr_proc->ctx, ctx, sizeof(ctx_t) );
   curr_proc->status = STATUS_READY;
