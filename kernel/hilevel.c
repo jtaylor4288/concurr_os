@@ -102,7 +102,7 @@ void hilevel_handler_rst( ctx_t *ctx ) {
 
   printstr("Starting up:\n");
 
-  pcb_t *console = pcb[proc_count++];
+  pcb_t *console = &pcb[proc_count++];
   memset( &console, 0, sizeof( pcb_t ) );
   console.pid      = 1;
   console.status   = STATUS_READY;
