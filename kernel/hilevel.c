@@ -68,7 +68,7 @@ pcb_t* add_proc(uint32_t pc, uint32_t sp) {
 void remove_proc( pid_t pid ) {
   pcb_t *to_remove = get_by_pid( pid );
   if ( to_remove != NULL ) {
-    pcb_t *to_swap = pcb[--proc_count];
+    pcb_t *to_swap = &pcb[--proc_count];
     memcpy( to_remove, to_swap, sizeof( pcb_t ) );
   }
 }
@@ -102,9 +102,9 @@ void hilevel_handler_rst( ctx_t *ctx ) {
   // pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_console );
   // pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_console  );
   // pcb[ 0 ].priority = 0;
-  pcb_t *console = add_proc( main_console, tos_console );
-  memcpy( ctx, &console.ctx, sizeof( ctx_t ) );
-  console.status = STATUS_EXECUTING;
+  pcb_t *console = add_proc( (uint32_t)main_console, tos_console );
+  memcpy( ctx, &console->ctx, sizeof( ctx_t ) );
+  console->status = STATUS_EXECUTING;
   curr_proc = console;
 
   TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
@@ -153,7 +153,7 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       // inputs: none
       //
       // output: none
-      scheduler();
+      scheduler( ctx );
       break;
     }
 
