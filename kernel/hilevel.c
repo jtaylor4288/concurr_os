@@ -102,14 +102,15 @@ void hilevel_handler_rst( ctx_t *ctx ) {
 
   printstr("Starting up:\n");
 
-  // memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );
-  // pcb[ 0 ].pid      = 1;
-  // pcb[ 0 ].status   = STATUS_READY;
-  // pcb[ 0 ].ctx.cpsr = 0x50;
-  // pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_console );
-  // pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_console  );
-  // pcb[ 0 ].priority = 0;
-  pcb_t *console = add_proc( (uint32_t)main_console, tos_console );
+  // pcb_t *console = pcb[proc_count++];
+  // memset( &console, 0, sizeof( pcb_t ) );
+  // console.pid      = 1;
+  // console.status   = STATUS_READY;
+  // console.ctx.cpsr = 0x50;
+  // console.ctx.pc   = ( uint32_t )( &main_console );
+  // console.ctx.sp   = ( uint32_t )( &tos_console  );
+  // console.priority = 0;
+  pcb_t *console = add_proc( (uint32_t)(&main_console), tos_console );
   memcpy( ctx, &console->ctx, sizeof( ctx_t ) );
   console->status = STATUS_EXECUTING;
   curr_proc = console;
