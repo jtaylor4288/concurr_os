@@ -92,12 +92,15 @@ void scheduler( ctx_t *ctx ) {
 extern void main_console();
 extern uint32_t tos_console;
 
+void printstr(const char *c) {
+  while ( *c != '\x00' ) {
+    PL011_putc( UART0, *c++, true );
+  }
+}
+
 void hilevel_handler_rst( ctx_t *ctx ) {
 
-  char msg[15] = "Hello, world!\n";
-  for ( int i = 0; i < 14; ++i ) {
-    PL011_putc( UART0, msg[i], true );
-  }
+  printstr("Starting up:\n");
 
   // memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );
   // pcb[ 0 ].pid      = 1;
@@ -111,6 +114,8 @@ void hilevel_handler_rst( ctx_t *ctx ) {
   console->status = STATUS_EXECUTING;
   curr_proc = console;
 
+  printstr("[1/3] Created the console\n");
+
   TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
   TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
   TIMER0->Timer1Ctrl |= 0x00000040; // select periodic timer
@@ -122,7 +127,11 @@ void hilevel_handler_rst( ctx_t *ctx ) {
   GICC0->CTLR         = 0x00000001; // enable GIC interface
   GICD0->CTLR         = 0x00000001; // enable GIC distributor
 
+  printstr("[2/3] Started timers\n");
+
   int_enable_irq();
+
+  printstr("[3/3] Started interrupts\n");
 
   return;
 }
