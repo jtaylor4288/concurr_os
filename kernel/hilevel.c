@@ -15,13 +15,17 @@ pcb_t *curr_proc = NULL;
 size_t proc_count = 0;
 
 // TODO: Make this more efficient
+// TODO: Pick a good loop condition
 pid_t get_new_pid() {
-  for ( pid_t p = 1; /* pick a good condition */; ++p ) {
-    int pick = 1;
+  for ( pid_t p = 1; p < PROC_LIMIT; ++p ) {
+    int used = 0;
     for ( size_t i = 0; i < proc_count; ++i ) {
-      pick &= ( p == pcb[i].pid );
+      if ( p == pcb[i].pid ) {
+        used = 1;
+        break;
+      }
     }
-    if ( pick ) return p;
+    if ( !used ) return p;
   }
   return -1;
 }
