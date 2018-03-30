@@ -21,7 +21,7 @@
 #include "PL011.h"
 #include "SP804.h"
 
-// Include functionality relating to the   kernel.
+// Include functionality relating to the kernel.
 
 #include "lolevel.h"
 #include     "int.h"
@@ -44,8 +44,8 @@ typedef struct {
      pid_t pid;
   status_t status;
      ctx_t ctx;
-  uint32_t priority;
-  uint32_t age;
+      int priority;
+      int age;
 } pcb_t;
 
 #endif

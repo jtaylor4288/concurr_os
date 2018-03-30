@@ -11,23 +11,65 @@
 #define PROC_LIMIT 15
 
 pcb_t pcb[PROC_LIMIT];
-pcb_t *curr_proc;
-uint32_t proc_count;
+pcb_t *curr_proc = NULL;
+size_t proc_count = 0;
+
+// TODO: Make this more efficient
+pid_t get_new_pid() {
+  for ( pid_t p = 1; /* pick a good condition */; ++p ) {
+    int pick = 1;
+    for ( size_t i = 0; i < proc_count; ++i ) {
+      pick &= ( p == pcb[i].pid );
+    }
+    if ( pick ) return p;
+  }
+  return -1;
+}
+
+pcb_t* get_by_pid( pid_t pid ) {
+  for ( size_t i = 0; i < proc_count; ++i ) {
+    if ( pcb[i].pid == pid ) return &pcb[i];
+  }
+  return NULL;
+}
 
 // Iterates through all processes to find the most important
 // Importance is determined by adding the priority and the age
 // Each process has its age incremented by 1 and the current process' is reset to 0
 // The curr_proc pointer updated to the newly chosen process
 void pick_next_proc() {
-  uint32_t max_imp = 0;
+  int max_imp = 0;
   curr_proc->age = -1;
-  for ( int i = 0; i < proc_count; ++i ) {
+  for ( size_t i = 0; i < proc_count; ++i ) {
     pcb[i].age += 1;
-    uint32_t imp = pcb[i].age + pcb[i].priority;
+    int imp = pcb[i].age + pcb[i].priority;
     if ( imp > max_imp ) {
       max_imp = imp;
       curr_proc = &pcb[i];
     }
+  }
+}
+
+// TODO: document this
+pcb_t* add_proc(uint32_t pc, uint32_t sp) {
+  pcb_t *new_proc = &pcb[proc_count++];
+  memset( new_proc, 0, sizeof( pcb_t) );
+  new_proc->pid      = get_new_pid();
+  new_proc->status   = STATUS_READY;
+  new_proc->ctx.cpsr = 0x50;
+  new_proc->ctx.pc   = pc;
+  new_proc->ctx.sp   = sp;
+  new_proc->priority = 0;
+  return new_proc;
+}
+
+// TODO: document this
+// TODO: zero memory?
+void remove_proc( pid_t pid ) {
+  pcb_t *to_remove = get_by_pid( pid );
+  if ( to_remove != NULL ) {
+    pcb_t *to_swap = pcb[--proc_count];
+    memcpy( to_remove, to_swap, sizeof( pcb_t ) );
   }
 }
 
@@ -43,11 +85,8 @@ void scheduler( ctx_t *ctx ) {
 }
 
 
-extern void main_P3();
-extern void main_P4();
-
-extern uint32_t tos_P3;
-extern uint32_t tos_P4;
+extern void main_console();
+extern uint32_t tos_console;
 
 void hilevel_handler_rst( ctx_t *ctx ) {
 
@@ -56,26 +95,17 @@ void hilevel_handler_rst( ctx_t *ctx ) {
     PL011_putc( UART0, msg[i], true );
   }
 
-  memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );
-  pcb[ 0 ].pid      = 1;
-  pcb[ 0 ].status   = STATUS_READY;
-  pcb[ 0 ].ctx.cpsr = 0x50;
-  pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
-  pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_P3  );
-  pcb[ 0 ].priority = 0;
-
-  memset( &pcb[ 1 ], 0, sizeof( pcb_t ) );
-  pcb[ 1 ].pid      = 2;
-  pcb[ 1 ].status   = STATUS_READY;
-  pcb[ 1 ].ctx.cpsr = 0x50;
-  pcb[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
-  pcb[ 1 ].ctx.sp   = ( uint32_t )( &tos_P4  );
-  pcb[ 1 ].priority = 0;
-
-  memcpy( ctx, &pcb[0].ctx, sizeof( ctx_t ) );
-  pcb[ 0 ].status = STATUS_EXECUTING;
-  curr_proc = &pcb[0];
-  proc_count = 2;
+  // memset( &pcb[ 0 ], 0, sizeof( pcb_t ) );
+  // pcb[ 0 ].pid      = 1;
+  // pcb[ 0 ].status   = STATUS_READY;
+  // pcb[ 0 ].ctx.cpsr = 0x50;
+  // pcb[ 0 ].ctx.pc   = ( uint32_t )( &main_console );
+  // pcb[ 0 ].ctx.sp   = ( uint32_t )( &tos_console  );
+  // pcb[ 0 ].priority = 0;
+  pcb_t *console = add_proc( main_console, tos_console );
+  memcpy( ctx, &console.ctx, sizeof( ctx_t ) );
+  console.status = STATUS_EXECUTING;
+  curr_proc = console;
 
   TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
   TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
@@ -119,10 +149,22 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
   switch ( id ) {
     case 0x00 : {
       // yield
+      //
+      // inputs: none
+      //
+      // output: none
+      scheduler();
       break;
     }
 
     case 0x01 : {
+      // write
+      //
+      // inputs: r0  int          file descriptor
+      //         r1  const void*  buffer to read from
+      //         r2  size_t       size of buffer
+      //
+      // output: r0  int          number of bytes written
       int  fd = ( int ) ( ctx->gpr[ 0 ] );
       char *c = ( char* ) ( ctx->gpr[ 1 ] );
       int   n = ( int ) ( ctx->gpr[ 2 ] );
@@ -132,6 +174,80 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       }
 
       ctx->gpr[ 0 ] = n;
+      break;
+    }
+
+    case 0x02 : {
+      // read
+      //
+      // inputs: r0  int     file descriptor
+      //         r1  void*   buffer to write into
+      //         r2  size_t  number of bytes to read
+      //
+      // output: r0  int     number of bytes read
+
+      // TODO: implement this
+      ctx->gpr[0] = 0;
+      break;
+    }
+
+    case 0x03 : {
+      // fork
+      //
+      // inputs: none
+      //
+      // output: r0  int  for the parent process, the child process' pid
+      //                  for the child process, 0
+      //                  in the event of an error, -1
+
+      // TODO: implement this
+      ctx->gpr[0] = -1;
+      break;
+    }
+
+    case 0x04 : {
+      // exit
+      //
+      // inputs: r0  int  status with which to exit
+      //
+      // output: none
+
+      // TODO: implement this
+      break;
+    }
+
+    case 0x05 : {
+      // exec
+      //
+      // inputs: r0  void*  pointer to the entry point of the new process
+      //
+      // output: none
+
+      // TODO: implement this
+      break;
+    }
+
+    case 0x06 : {
+      // kill
+      //
+      // inputs: r0  int  pid of the process to kill
+      //         r1  int  status with which to kill the process
+      //
+      // output: r0  int  ???
+
+      // TODO: implement this
+      break;
+    }
+
+    case 0x07 : {
+      // nice
+      //
+      // inputs: r0  int  pid of the process to modify
+      //         r1  int  new priority of the process
+      //
+      // output: none
+
+      // TODO: implement this
       break;
     }
 
