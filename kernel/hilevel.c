@@ -90,7 +90,7 @@ void scheduler( ctx_t *ctx ) {
 
 
 extern void main_console();
-extern uint32_t tos_console;
+extern uint32_t tos_user;
 
 void printstr(const char *c) {
   while ( *c != '\x00' ) {
@@ -102,15 +102,15 @@ void hilevel_handler_rst( ctx_t *ctx ) {
 
   printstr("Starting up:\n");
 
-  pcb_t *console = &pcb[proc_count++];
-  memset( console, 0, sizeof( pcb_t ) );
-  console->pid      = 1;
-  console->status   = STATUS_READY;
-  console->ctx.cpsr = 0x50;
-  console->ctx.pc   = ( uint32_t )( &main_console );
-  console->ctx.sp   = ( uint32_t )( &tos_console  );
-  console->priority = 0;
-  // pcb_t *console = add_proc( (uint32_t)(&main_console), tos_console );
+  // pcb_t *console = &pcb[proc_count++];
+  // memset( console, 0, sizeof( pcb_t ) );
+  // console->pid      = 1;
+  // console->status   = STATUS_READY;
+  // console->ctx.cpsr = 0x50;
+  // console->ctx.pc   = ( uint32_t )( &main_console );
+  // console->ctx.sp   = ( uint32_t )( &tos_user     );
+  // console->priority = 0;
+  pcb_t *console = add_proc( (uint32_t)(&main_console), tos_user );
   memcpy( ctx, &console->ctx, sizeof( ctx_t ) );
   console->status = STATUS_EXECUTING;
   curr_proc = console;

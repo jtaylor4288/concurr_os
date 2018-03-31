@@ -7,19 +7,19 @@
 
 SECTIONS {
 
-  /* assign load address (per  QEMU) */
+  /* assign load address (per  QEMU)  */
   .       =     0x70010000;
 
-  /* place text segment(s)           */
+  /* place text segment(s)            */
   .text : { kernel/lolevel.o(.text) *(.text .rodata) }
 
-  /* place data segment(s)           */
+  /* place data segment(s)            */
   .data : {                         *(.data        ) }
 
-  /* place bss  segment(s)           */
+  /* place bss  segment(s)            */
   .bss  : {                         *(.bss         ) }
 
-  /* place heap                      */
+  /* place heap                       */
   .heap : {
             end = .;
     _heap_start = .;
@@ -27,20 +27,19 @@ SECTIONS {
       _heap_end = .;
   }
 
-  /* align       address (per AAPCS) */
+  /* align       address (per AAPCS)  */
   .       = ALIGN( 8 );
 
-  /* allocate stack for irq mode     */
+  /* allocate stack for irq mode      */
   .       = . + 0x00001000;
   tos_irq = .;
 
-  /* allocate stack for svc mode     */
+  /* allocate stack for svc mode      */
   .       = . + 0x00001000;
   tos_svc = .;
 
-  /* TODO: Remove this later         */
-  /* allocate stack for P3           */
-  .       = . + 0x00001000;
-  tos_console  = .;
+  /* allocate stack for user programs */
+  .         = . + 0x00001000;
+  tos_user  = .;
 
 }
