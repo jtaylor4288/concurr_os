@@ -57,7 +57,8 @@ void pick_next_proc() {
 typedef void(*voidF)();
 
 // TODO: document this
-pcb_t* add_proc(voidF pc, uint32_t *sp) {
+// TODO: remove the sp argument ( imp get_stack_pointer )
+pcb_t* create_proc(voidF pc, uint32_t *sp) {
   pcb_t *new_proc = &pcb[proc_count++];
   memset( new_proc, 0, sizeof( pcb_t) );
   new_proc->pid      = get_new_pid();
@@ -70,7 +71,6 @@ pcb_t* add_proc(voidF pc, uint32_t *sp) {
 }
 
 // TODO: document this
-// TODO: zero memory?
 void remove_proc( pid_t pid ) {
   pcb_t *to_remove = get_by_pid( pid );
   if ( to_remove != NULL ) {
@@ -102,22 +102,12 @@ void printstr(const char *c) {
 
 void hilevel_handler_rst( ctx_t *ctx ) {
 
-  printstr("Starting up:\n");
+  printstr("Hello!\n");
 
-  // pcb_t *console = &pcb[proc_count++];
-  // memset( console, 0, sizeof( pcb_t ) );
-  // console->pid      = 1;
-  // console->status   = STATUS_READY;
-  // console->ctx.cpsr = 0x50;
-  // console->ctx.pc   = ( uint32_t )( &main_console );
-  // console->ctx.sp   = ( uint32_t )( &tos_user     );
-  // console->priority = 0;
-  pcb_t *console = add_proc( &main_console, &tos_user );
+  pcb_t *console = create_proc( &main_console, &tos_user );
   memcpy( ctx, &console->ctx, sizeof( ctx_t ) );
   console->status = STATUS_EXECUTING;
   curr_proc = console;
-
-  printstr("[1/3] Created the console\n");
 
   TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
   TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
@@ -130,11 +120,7 @@ void hilevel_handler_rst( ctx_t *ctx ) {
   GICC0->CTLR         = 0x00000001; // enable GIC interface
   GICD0->CTLR         = 0x00000001; // enable GIC distributor
 
-  printstr("[2/3] Started timers\n");
-
   int_enable_irq();
-
-  printstr("[3/3] Started interrupts\n");
 
   return;
 }
