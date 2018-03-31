@@ -110,7 +110,7 @@ void hilevel_handler_rst( ctx_t *ctx ) {
   // console->ctx.pc   = ( uint32_t )( &main_console );
   // console->ctx.sp   = ( uint32_t )( &tos_user     );
   // console->priority = 0;
-  pcb_t *console = add_proc( (uint32_t)(&main_console), tos_user );
+  pcb_t *console = add_proc( (uint32_t)(&main_console), (uint32_t)(&tos_user) );
   memcpy( ctx, &console->ctx, sizeof( ctx_t ) );
   console->status = STATUS_EXECUTING;
   curr_proc = console;
