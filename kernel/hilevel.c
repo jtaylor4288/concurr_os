@@ -63,8 +63,8 @@ pcb_t* add_proc(voidF *pc, uint32_t sp) {
   new_proc->pid      = get_new_pid();
   new_proc->status   = STATUS_READY;
   new_proc->ctx.cpsr = 0x50;
-  new_proc->ctx.pc   = pc;
-  new_proc->ctx.sp   = &sp;
+  new_proc->ctx.pc   = (uint32_t) pc;
+  new_proc->ctx.sp   = (uint32_t) &sp;
   new_proc->priority = 0;
   return new_proc;
 }
