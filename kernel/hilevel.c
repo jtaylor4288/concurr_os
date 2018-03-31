@@ -57,7 +57,7 @@ void pick_next_proc() {
 typedef void(*voidF)();
 
 // TODO: document this
-pcb_t* add_proc(voidF *pc, uint32_t *sp) {
+pcb_t* add_proc(voidF pc, uint32_t *sp) {
   pcb_t *new_proc = &pcb[proc_count++];
   memset( new_proc, 0, sizeof( pcb_t) );
   new_proc->pid      = get_new_pid();
