@@ -57,14 +57,14 @@ void pick_next_proc() {
 typedef void(*voidF)();
 
 // TODO: document this
-pcb_t* add_proc(voidF *pc, uint32_t sp) {
+pcb_t* add_proc(voidF *pc, uint32_t *sp) {
   pcb_t *new_proc = &pcb[proc_count++];
   memset( new_proc, 0, sizeof( pcb_t) );
   new_proc->pid      = get_new_pid();
   new_proc->status   = STATUS_READY;
   new_proc->ctx.cpsr = 0x50;
   new_proc->ctx.pc   = (uint32_t) pc;
-  new_proc->ctx.sp   = (uint32_t) &sp;
+  new_proc->ctx.sp   = (uint32_t) sp;
   new_proc->priority = 0;
   return new_proc;
 }
@@ -112,7 +112,7 @@ void hilevel_handler_rst( ctx_t *ctx ) {
   // console->ctx.pc   = ( uint32_t )( &main_console );
   // console->ctx.sp   = ( uint32_t )( &tos_user     );
   // console->priority = 0;
-  pcb_t *console = add_proc( main_console, tos_user );
+  pcb_t *console = add_proc( &main_console, &tos_user );
   memcpy( ctx, &console->ctx, sizeof( ctx_t ) );
   console->status = STATUS_EXECUTING;
   curr_proc = console;
