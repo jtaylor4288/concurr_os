@@ -95,6 +95,12 @@ void remove_proc( pid_t pid ) {
   }
 }
 
+pcb_t* duplicate_proc( pcb_t *source_proc ) {
+  pcb_t *new_proc = &pcb[proc_count++];
+  memcpy( new_proc, source_proc, sizeof( pcb_t ) );
+  return new_proc;
+}
+
 // Swaps out the current process for the new one
 void scheduler( ctx_t *ctx ) {
   memcpy( &curr_proc->ctx, ctx, sizeof(ctx_t) );
@@ -218,7 +224,9 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       //                  in the event of an error, -1
 
       // TODO: implement this
-      ctx->gpr[0] = -1;
+      pcb_t *child = duplicate_proc( curr_proc );
+      child->ctx->gpr[0] = 0;
+      ctx->gpr[0] = child->pid;
       break;
     }
 
@@ -241,7 +249,8 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       // output: none
 
       // TODO: implement this
-      create_proc( ctx->gpr[0] );
+      // create_proc( ctx->gpr[0] );
+      ctx->pc = gpr[0];
       break;
     }
 
