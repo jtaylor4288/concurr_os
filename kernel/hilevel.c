@@ -36,11 +36,14 @@ extern uint32_t tos_user;
 // TODO: document this
 uint32_t get_new_sp() {
   uint32_t sp = (uint32_t) &tos_user;
-  for ( size_t i = 0; i < proc_count; ++i ) {
-    if ( sp == pcb[i].ctx.sp ) {
-      break;
+  size_t i = 0;
+  while ( i < proc_count ) {
+    if ( pcb[i].ctx.sp - sp < STACK_SIZE ) {
+      sp += STACK_SIZE;
+      i = 0;
+    } else {
+      ++i;
     }
-    sp += STACK_SIZE;
   }
   memset( (uint32_t*) sp, 0, STACK_SIZE );
   return sp;
