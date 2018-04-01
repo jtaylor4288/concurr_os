@@ -33,6 +33,7 @@ pid_t get_new_pid() {
 
 extern uint32_t tos_user;
 
+// TODO: document this
 uint32_t get_new_sp() {
   uint32_t sp = (uint32_t) &tos_user;
   for ( size_t i = 0; i < proc_count; ++i ) {
@@ -41,9 +42,11 @@ uint32_t get_new_sp() {
     }
     sp += STACK_SIZE;
   }
+  memset( sp, 0, STACK_SIZE );
   return sp;
 }
 
+// TODO: document this
 pcb_t* get_by_pid( pid_t pid ) {
   for ( size_t i = 0; i < proc_count; ++i ) {
     if ( pcb[i].pid == pid ) return &pcb[i];
@@ -238,6 +241,7 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       // output: none
 
       // TODO: implement this
+      create_proc( ctx->grp[0] );
       break;
     }
 
