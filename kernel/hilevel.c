@@ -236,6 +236,7 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       //                  in the event of an error, -1
 
       // TODO: implement this
+      memcpy( &curr_proc->ctx, ctx, sizeof(ctx_t) ); // save_ctx
       pcb_t *child = duplicate_proc( curr_proc );
       child->ctx.gpr[0] = 0;
       ctx->gpr[0] = child->pid;
