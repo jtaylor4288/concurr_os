@@ -98,6 +98,12 @@ void remove_proc( pid_t pid ) {
 pcb_t* duplicate_proc( pcb_t *source_proc ) {
   pcb_t *new_proc = &pcb[proc_count++];
   memcpy( new_proc, source_proc, sizeof( pcb_t ) );
+
+  new_proc->pid    = get_new_pid();
+  new_proc->ctx.sp = get_new_sp();
+
+  memcpy( new_proc->ctx.sp, source_proc->ctx.sp, STACK_SIZE );
+
   return new_proc;
 }
 
