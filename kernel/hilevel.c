@@ -9,6 +9,7 @@
 
 // The maximum number of allowed processes. This is static as the pcb is statically allocated
 #define PROC_LIMIT 15
+#define STACK_SIZE 0x400000
 
 pcb_t pcb[PROC_LIMIT];
 pcb_t *curr_proc = NULL;
@@ -28,6 +29,19 @@ pid_t get_new_pid() {
     if ( !used ) return p;
   }
   return -1;
+}
+
+extern uint32_t tos_user;
+
+uint32_t get_new_sp() {
+  uint32_t sp = (uint32_t) &tos_user;
+  for ( size_t i = 0; i < proc_count; ++i ) {
+    if ( sp == pcb[i].ctx.sp ) {
+      break;
+    }
+    sp += STACK_SIZE;
+  }
+  return sp;
 }
 
 pcb_t* get_by_pid( pid_t pid ) {
@@ -57,15 +71,14 @@ void pick_next_proc() {
 typedef void(*voidF)();
 
 // TODO: document this
-// TODO: remove the sp argument ( imp get_stack_pointer )
-pcb_t* create_proc(voidF pc, uint32_t *sp) {
+pcb_t* create_proc(voidF pc) {
   pcb_t *new_proc = &pcb[proc_count++];
   memset( new_proc, 0, sizeof( pcb_t) );
   new_proc->pid      = get_new_pid();
   new_proc->status   = STATUS_READY;
   new_proc->ctx.cpsr = 0x50;
   new_proc->ctx.pc   = (uint32_t) pc;
-  new_proc->ctx.sp   = (uint32_t) sp;
+  new_proc->ctx.sp   = get_new_sp();
   new_proc->priority = 0;
   return new_proc;
 }
@@ -92,7 +105,6 @@ void scheduler( ctx_t *ctx ) {
 
 
 extern void main_console();
-extern uint32_t tos_user;
 
 void printstr(const char *c) {
   while ( *c != '\x00' ) {
@@ -104,7 +116,7 @@ void hilevel_handler_rst( ctx_t *ctx ) {
 
   printstr("Hello!\n");
 
-  pcb_t *console = create_proc( &main_console, &tos_user );
+  pcb_t *console = create_proc( &main_console );
   memcpy( ctx, &console->ctx, sizeof( ctx_t ) );
   console->status = STATUS_EXECUTING;
   curr_proc = console;
