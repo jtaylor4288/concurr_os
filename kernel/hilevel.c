@@ -38,7 +38,7 @@ uint32_t get_new_sp() {
   uint32_t sp = (uint32_t) &tos_user;
   size_t i = 0;
   while ( i < proc_count ) {
-    if ( pcb[i].ctx.sp - sp < STACK_SIZE ) {
+    if ( sp <= pcb[i].ctx.sp && pcb[i].ctx.sp < sp + STACK_SIZE ) {
       sp += STACK_SIZE;
       i = 0;
     } else {
