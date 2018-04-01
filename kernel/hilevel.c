@@ -42,7 +42,7 @@ uint32_t get_new_sp() {
     }
     sp += STACK_SIZE;
   }
-  memset( sp, 0, STACK_SIZE );
+  memset( (uint32_t*) sp, 0, STACK_SIZE );
   return sp;
 }
 
@@ -225,7 +225,7 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
 
       // TODO: implement this
       pcb_t *child = duplicate_proc( curr_proc );
-      child->ctx->gpr[0] = 0;
+      child->ctx.gpr[0] = 0;
       ctx->gpr[0] = child->pid;
       break;
     }
@@ -250,7 +250,7 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
 
       // TODO: implement this
       // create_proc( ctx->gpr[0] );
-      ctx->pc = gpr[0];
+      ctx->pc = ctx->gpr[0];
       break;
     }
 
