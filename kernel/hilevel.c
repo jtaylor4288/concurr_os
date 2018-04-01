@@ -241,7 +241,7 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       // output: none
 
       // TODO: implement this
-      create_proc( ctx->grp[0] );
+      create_proc( ctx->gpr[0] );
       break;
     }
 
