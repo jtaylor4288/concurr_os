@@ -9,7 +9,7 @@
 
 // The maximum number of allowed processes. This is static as the pcb is statically allocated
 #define PROC_LIMIT 15
-#define STACK_SIZE 0x400000
+#define STACK_SIZE 0x1000
 
 pcb_t pcb[PROC_LIMIT];
 pcb_t *curr_proc = NULL;
@@ -38,8 +38,8 @@ uint32_t get_new_sp() {
   uint32_t sp = (uint32_t) &tos_user;
   size_t i = 0;
   while ( i < proc_count ) {
-    if ( sp <= pcb[i].ctx.sp && pcb[i].ctx.sp < sp + STACK_SIZE ) {
-      sp += STACK_SIZE;
+    if ( pcb[i].ctx.sp <= sp && sp - STACK_SIZE < pcb[i].ctx.sp ) {
+      sp -= STACK_SIZE;
       i = 0;
     } else {
       ++i;

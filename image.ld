@@ -39,7 +39,8 @@ SECTIONS {
   tos_svc = .;
 
   /* allocate stack for user programs */
-  .         = . + 0x00001000;
-  tos_user  = .;
+  bos_user = .;
+  .        = . + 0x0000f000;
+  tos_user = .;
 
 }
