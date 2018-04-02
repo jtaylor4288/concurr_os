@@ -101,8 +101,7 @@ pcb_t* create_proc(voidF pc) {
 }
 
 // TODO: document this
-void remove_proc( pid_t pid ) {
-  pcb_t *to_remove = get_by_pid( pid );
+void remove_proc( pcb_t *to_remove ) {
   if ( to_remove != NULL ) {
     return_sp( to_remove->ctx.sp );
     pcb_t *to_swap = &pcb[--proc_count];
@@ -251,8 +250,6 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       // output: r0  int  for the parent process, the child process' pid
       //                  for the child process, 0
       //                  in the event of an error, -1
-
-      // TODO: implement this
       memcpy( &curr_proc->ctx, ctx, sizeof(ctx_t) ); // save_ctx
       pcb_t *child = duplicate_proc( curr_proc );
       child->ctx.gpr[0] = 0;
@@ -267,7 +264,16 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       //
       // output: none
 
-      // TODO: implement this
+      remove_proc( curr_proc );
+      // scheduler();
+
+      // stolen from scheduler:
+      pick_next_proc();
+
+      memcpy( ctx, &curr_proc->ctx, sizeof(ctx_t) );
+      curr_proc->status = STATUS_EXECUTING;
+      //
+
       break;
     }
 
@@ -278,8 +284,10 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       //
       // output: none
 
-      // TODO: implement this
-      // create_proc( ctx->gpr[0] );
+      // TODO: reset instead of reallocating stack?
+      //       ( the current method should reuse the same stack, though )
+      return_sp( ctx->sp );
+      ctx->sp = get_new_sp();
       ctx->pc = ctx->gpr[0];
       break;
     }
@@ -290,9 +298,14 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       // inputs: r0  int  pid of the process to kill
       //         r1  int  status with which to kill the process
       //
-      // output: r0  int  ???
-
-      // TODO: implement this
+      // output: r0  int  0 on success, -1 on error
+      pcb_t *to_remove = get_by_pid( ctx->gpr[0] );
+      if ( to_remove ) {
+        remove_proc( to_remove );
+        ctx->gpr[0] = 0;
+      } else {
+        ctx->gpr[0] = -1;
+      }
       break;
     }
 
