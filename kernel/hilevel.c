@@ -121,7 +121,7 @@ pcb_t* duplicate_proc( pcb_t *source_proc ) {
     tos_source += STACK_SIZE;
   }
 
-  memcpy( (uint32_t*) new_proc->ctx.sp, (uint32_t*) os_source, STACK_SIZE );
+  memcpy( (uint32_t*) new_proc->ctx.sp, (uint32_t*) tos_source, STACK_SIZE );
   new_proc->ctx.sp += ( source_proc->ctx.sp - tos_source );
 
   return new_proc;
