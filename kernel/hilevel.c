@@ -15,6 +15,9 @@ pcb_t pcb[PROC_LIMIT];
 pcb_t *curr_proc = NULL;
 size_t proc_count = 0;
 
+uint32_t free_stack[PROC_LIMIT];
+size_t free_stack_count = PROC_LIMIT;
+
 // TODO: Make this more efficient
 // TODO: Pick a good loop condition
 pid_t get_new_pid() {
@@ -31,22 +34,30 @@ pid_t get_new_pid() {
   return -1;
 }
 
-extern uint32_t tos_user;
-
 // TODO: document this
 uint32_t get_new_sp() {
-  uint32_t sp = (uint32_t) &tos_user;
-  size_t i = 0;
-  while ( i < proc_count ) {
-    if ( pcb[i].ctx.sp <= sp && sp - STACK_SIZE < pcb[i].ctx.sp ) {
-      sp -= STACK_SIZE;
-      i = 0;
-    } else {
-      ++i;
-    }
-  }
+  uint32_t sp = free_stack[--free_stack_count];
   memset( (uint32_t*) sp, 0, STACK_SIZE );
   return sp;
+}
+
+extern uint32_t bos_user;
+extern uint32_t tos_user;
+
+void return_sp( uint32_t used_sp ) {
+  uint32_t sp = &bos_user;
+  while ( sp < used_sp ) {
+    sp += STACK_SIZE;
+  }
+  free_stack[free_stack_count++] = sp;
+}
+
+void init_free_stack() {
+  uint32_t sp = &tos_user;
+  for ( size_t i = 0; i < PROC_LIMIT; ++i ) {
+    free_stack[i] = sp;
+    sp -= STACK_SIZE;
+  }
 }
 
 // TODO: document this
@@ -93,6 +104,7 @@ pcb_t* create_proc(voidF pc) {
 void remove_proc( pid_t pid ) {
   pcb_t *to_remove = get_by_pid( pid );
   if ( to_remove != NULL ) {
+    return_sp( to_remove->ctx.sp );
     pcb_t *to_swap = &pcb[--proc_count];
     memcpy( to_remove, to_swap, sizeof( pcb_t ) );
   }
@@ -139,6 +151,8 @@ void printstr(const char *c) {
 void hilevel_handler_rst( ctx_t *ctx ) {
 
   printstr("Hello!\n");
+
+  init_free_stack();
 
   pcb_t *console = create_proc( &main_console );
   memcpy( ctx, &console->ctx, sizeof( ctx_t ) );
