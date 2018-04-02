@@ -45,7 +45,7 @@ extern uint32_t bos_user;
 extern uint32_t tos_user;
 
 void return_sp( uint32_t used_sp ) {
-  uint32_t sp = &bos_user;
+  uint32_t sp = (uint32_t) &bos_user;
   while ( sp < used_sp ) {
     sp += STACK_SIZE;
   }
@@ -53,7 +53,7 @@ void return_sp( uint32_t used_sp ) {
 }
 
 void init_free_stack() {
-  uint32_t sp = &tos_user;
+  uint32_t sp = (uint32_t) &tos_user;
   for ( size_t i = 0; i < PROC_LIMIT; ++i ) {
     free_stack[i] = sp;
     sp -= STACK_SIZE;
@@ -121,7 +121,7 @@ pcb_t* duplicate_proc( pcb_t *source_proc ) {
     tos_source += STACK_SIZE;
   }
 
-  memcpy( new_proc->ctx.sp, tos_source, STACK_SIZE );
+  memcpy( (uint32_t*) new_proc->ctx.sp, (uint32_t*) os_source, STACK_SIZE );
   new_proc->ctx.sp += ( source_proc->ctx.sp - tos_source );
 
   return new_proc;
