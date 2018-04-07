@@ -316,8 +316,10 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       //         r1  int  new priority of the process
       //
       // output: none
-
-      // TODO: implement this
+      pcb_t *to_change = get_by_pid( ctx->gpr[0] );
+      if ( to_change ) {
+        to_change->pid = ctx->gpr[1];
+      }
       break;
     }
 
