@@ -23,7 +23,7 @@ extern uint32_t bos_user;
 
 void init_pcb() {
   pid_t    pid = 1;
-  uint32_t sp  = tos_user;
+  uint32_t sp  = (uint32_t) &tos_user;
   for ( size_t i = 0; i < PROC_LIMIT; ( ++i, sp -= STACK_SIZE ) ) {
     pcb[i].pid      = pid++;
     pcb[i].ctx.pc   = (uint32_t) NULL;
