@@ -34,7 +34,7 @@ void init_pcb() {
 
 uint32_t get_tos( uint32_t sp ) {
   uint32_t tos = (uint32_t) &bos_user;
-  while ( tos < sp ) {
+  while ( tos <= sp ) {
     tos += STACK_SIZE;
   }
   return tos;
@@ -94,7 +94,9 @@ void remove_proc( pcb_t *to_remove ) {
   if ( to_remove == NULL ) return;
 
   to_remove->ctx.sp = get_tos( to_remove->ctx.sp );
+
   pcb_t *to_swap = &pcb[--proc_count];
+  if ( to_swap == to_remove ) return;
 
   pcb_t temp;
   memcpy( &temp,     to_remove, sizeof( pcb_t ) );
@@ -178,7 +180,6 @@ void hilevel_handler_irq( ctx_t *ctx ) {
 
   switch ( id ) {
     case GIC_SOURCE_TIMER0: {
-      PL011_putc( UART0, '\n', true );
       scheduler( ctx );
       TIMER0->Timer1IntClr = 0x01;
       break;
@@ -284,11 +285,9 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       //
       // output: none
 
-      // TODO: reset instead of reallocating stack?
-      //       ( the current method should reuse the same stack, though )
-      void_fn new_pc = (void_fn) ctx->gpr[0];
-      remove_proc( curr_proc );
-      curr_proc = create_proc( new_pc );
+      // TODO: Zero stack and stuff?
+      ctx->pc = ctx->gpr[0];
+      ctx->sp = get_tos( ctx->sp );
       break;
     }
 
