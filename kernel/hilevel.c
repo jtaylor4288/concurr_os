@@ -11,54 +11,35 @@
 #define PROC_LIMIT 15
 #define STACK_SIZE 0x1000
 
+
 pcb_t pcb[PROC_LIMIT];
 pcb_t *curr_proc = NULL;
 size_t proc_count = 0;
 
-uint32_t free_stack[PROC_LIMIT];
-size_t free_stack_count = PROC_LIMIT;
 
-// TODO: Make this more efficient
-// TODO: Pick a good loop condition
-pid_t get_new_pid() {
-  for ( pid_t p = 1; p < PROC_LIMIT; ++p ) {
-    int used = 0;
-    for ( size_t i = 0; i < proc_count; ++i ) {
-      if ( p == pcb[i].pid ) {
-        used = 1;
-        break;
-      }
-    }
-    if ( !used ) return p;
-  }
-  return -1;
-}
-
-// TODO: document this
-uint32_t get_new_sp() {
-  uint32_t sp = free_stack[--free_stack_count];
-  memset( (uint32_t*) sp, 0, STACK_SIZE );
-  return sp;
-}
-
-extern uint32_t bos_user;
 extern uint32_t tos_user;
+extern uint32_t bos_user;
 
-void return_sp( uint32_t used_sp ) {
-  uint32_t sp = (uint32_t) &bos_user;
-  while ( sp < used_sp ) {
-    sp += STACK_SIZE;
-  }
-  free_stack[free_stack_count++] = sp;
-}
 
-void init_free_stack() {
-  uint32_t sp = (uint32_t) &tos_user;
-  for ( size_t i = 0; i < PROC_LIMIT; ++i ) {
-    free_stack[i] = sp;
-    sp -= STACK_SIZE;
+void init_pcb() {
+  pid_t    pid = 1;
+  uint32_t sp  = tos_user;
+  for ( size_t i = 0; i < PROC_LIMIT; ( ++i, sp -= STACK_SIZE ) ) {
+    pcb[i].pid      = pid++;
+    pcb[i].ctx.pc   = (uint32_t) NULL;
+    pcb[i].ctx.sp   = sp;
   }
 }
+
+
+uint32_t get_tos( uint32_t sp ) {
+  uint32_t tos = (uint32_t) &bos_user;
+  while ( tos < sp ) {
+    tos += STACK_SIZE;
+  }
+  return tos;
+}
+
 
 // TODO: document this
 pcb_t* get_by_pid( pid_t pid ) {
@@ -67,6 +48,7 @@ pcb_t* get_by_pid( pid_t pid ) {
   }
   return NULL;
 }
+
 
 // Iterates through all processes to find the most important
 // Importance is determined by adding the priority and the age
@@ -85,47 +67,62 @@ void pick_next_proc() {
   }
 }
 
-typedef void(*voidF)();
+
+typedef void(*void_fn)();
+
 
 // TODO: document this
-pcb_t* create_proc(voidF pc) {
+pcb_t* create_proc(void_fn pc) {
   pcb_t *new_proc = &pcb[proc_count++];
-  memset( new_proc, 0, sizeof( pcb_t) );
-  new_proc->pid      = get_new_pid();
+
   new_proc->status   = STATUS_READY;
   new_proc->ctx.cpsr = 0x50;
   new_proc->ctx.pc   = (uint32_t) pc;
-  new_proc->ctx.sp   = get_new_sp();
+
+  memset( &new_proc->ctx.gpr, 0, 13 * sizeof(uint32_t) );
+  uint32_t *bos = (uint32_t*) ( new_proc->ctx.sp - STACK_SIZE );
+  memset( bos, 0, STACK_SIZE );
+
   new_proc->priority = 0;
+  new_proc->age      = 0;
   return new_proc;
 }
+
 
 // TODO: document this
 void remove_proc( pcb_t *to_remove ) {
-  if ( to_remove != NULL ) {
-    return_sp( to_remove->ctx.sp );
-    pcb_t *to_swap = &pcb[--proc_count];
-    memcpy( to_remove, to_swap, sizeof( pcb_t ) );
-  }
+  if ( to_remove == NULL ) return;
+
+  to_remove->ctx.sp = get_tos( to_remove->ctx.sp );
+  pcb_t *to_swap = &pcb[--proc_count];
+
+  pcb_t temp;
+  memcpy( &temp,     to_remove, sizeof( pcb_t ) );
+  memcpy( to_remove, to_swap,   sizeof( pcb_t ) );
+  memcpy( to_swap,   &temp,     sizeof( pcb_t ) );
 }
 
-pcb_t* duplicate_proc( pcb_t *source_proc ) {
-  pcb_t *new_proc = &pcb[proc_count++];
-  memcpy( new_proc, source_proc, sizeof( pcb_t ) );
 
-  new_proc->pid    = get_new_pid();
-  new_proc->ctx.sp = get_new_sp();
+pcb_t* duplicate_proc( pcb_t *src_proc ) {
+  pcb_t *dst_proc = create_proc( src_proc->ctx.pc );
 
-  uint32_t tos_source = tos_user;
-  while ( tos_source <= source_proc->ctx.sp ) {
-    tos_source += STACK_SIZE;
-  }
+  dst_proc->ctx.cpsr = src_proc->ctx.cpsr;
+  dst_proc->ctx.lr   = src_proc->ctx.lr;
+  dst_proc->age      = src_proc->age;
 
-  memcpy( (uint32_t*) new_proc->ctx.sp, (uint32_t*) tos_source, STACK_SIZE );
-  new_proc->ctx.sp += ( source_proc->ctx.sp - tos_source );
+  memcpy( dst_proc->ctx.gpr, src_proc->ctx.gpr, 13 * sizeof(uint32_t) );
 
-  return new_proc;
+  uint32_t *tos_src = (uint32_t*) get_tos( src_proc->ctx.sp );
+  uint32_t *bos_src = tos_src - STACK_SIZE;
+  uint32_t *bos_dst = (uint32_t*) dst_proc->ctx.sp - STACK_SIZE;
+  memcpy( bos_dst, bos_src, STACK_SIZE );
+
+  uint32_t stack_delta = (uint32_t)(tos_src) - src_proc->ctx.sp;
+  dst_proc->ctx.sp -= stack_delta;
+
+  return dst_proc;
 }
+
 
 // Swaps out the current process for the new one
 void scheduler( ctx_t *ctx ) {
@@ -146,6 +143,7 @@ void printstr(const char *c) {
     PL011_putc( UART0, *c++, true );
   }
 }
+
 
 void hilevel_handler_rst( ctx_t *ctx ) {
 
@@ -174,6 +172,7 @@ void hilevel_handler_rst( ctx_t *ctx ) {
   return;
 }
 
+
 void hilevel_handler_irq( ctx_t *ctx ) {
   uint32_t id = GICC0->IAR;
 
@@ -194,6 +193,7 @@ void hilevel_handler_irq( ctx_t *ctx ) {
 
   return;
 }
+
 
 void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
 
@@ -286,9 +286,9 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
 
       // TODO: reset instead of reallocating stack?
       //       ( the current method should reuse the same stack, though )
-      return_sp( ctx->sp );
-      ctx->sp = get_new_sp();
-      ctx->pc = ctx->gpr[0];
+      void_fn new_pc = (void_fn) ctx->gpr[0]
+      remove_proc( curr_proc );
+      curr_proc = create_proc( new_pc )
       break;
     }
 
