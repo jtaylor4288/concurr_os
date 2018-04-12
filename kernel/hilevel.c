@@ -104,7 +104,7 @@ void remove_proc( pcb_t *to_remove ) {
 
 
 pcb_t* duplicate_proc( pcb_t *src_proc ) {
-  pcb_t *dst_proc = create_proc( src_proc->ctx.pc );
+  pcb_t *dst_proc = create_proc( (void_fn) src_proc->ctx.pc );
 
   dst_proc->ctx.cpsr = src_proc->ctx.cpsr;
   dst_proc->ctx.lr   = src_proc->ctx.lr;
@@ -149,7 +149,7 @@ void hilevel_handler_rst( ctx_t *ctx ) {
 
   printstr("Hello!\n");
 
-  init_free_stack();
+  init_pcb();
 
   pcb_t *console = create_proc( &main_console );
   memcpy( ctx, &console->ctx, sizeof( ctx_t ) );
@@ -286,9 +286,9 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
 
       // TODO: reset instead of reallocating stack?
       //       ( the current method should reuse the same stack, though )
-      void_fn new_pc = (void_fn) ctx->gpr[0]
+      void_fn new_pc = (void_fn) ctx->gpr[0];
       remove_proc( curr_proc );
-      curr_proc = create_proc( new_pc )
+      curr_proc = create_proc( new_pc );
       break;
     }
 
