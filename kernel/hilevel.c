@@ -321,15 +321,15 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       //         r2  size_t       size of buffer
       //
       // output: r0  int          number of bytes written
-      int  fd   = ( int )   ( ctx->gpr[ 0 ] );
-      char buff = ( char* ) ( ctx->gpr[ 1 ] );
-      int  size = ( int )   ( ctx->gpr[ 2 ] );
+      int  fd    = ( int )   ( ctx->gpr[ 0 ] );
+      char *buff = ( char* ) ( ctx->gpr[ 1 ] );
+      int  size  = ( int )   ( ctx->gpr[ 2 ] );
 
       if ( fd < 3 ) {
-        for ( int i = 0; i < n; ++i ) {
+        for ( int i = 0; i < size; ++i ) {
           PL011_putc( UART0, buff[i], true );
         }
-        ctx->gpr[ 0 ] = n;
+        ctx->gpr[ 0 ] = size;
         break;
       }
 
@@ -340,7 +340,7 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
         break;
       }
 
-      ctx->gpr[0] = write_pipe( pipe, buff, n );
+      ctx->gpr[0] = write_pipe( pipe, buff, size );
       break;
     }
 
@@ -352,15 +352,15 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       //         r2  size_t  number of bytes to read
       //
       // output: r0  int     number of bytes read
-      int  fd   = ( int )   ( ctx->gpr[ 0 ] );
-      char buff = ( char* ) ( ctx->gpr[ 1 ] );
-      int  size = ( int )   ( ctx->gpr[ 2 ] );
+      int  fd    = ( int )   ( ctx->gpr[ 0 ] );
+      char *buff = ( char* ) ( ctx->gpr[ 1 ] );
+      int  size  = ( int )   ( ctx->gpr[ 2 ] );
 
       if ( fd < 3 ) {
-        for ( int i = 0; i < n; ++i ) {
+        for ( int i = 0; i < size; ++i ) {
           PL011_putc( UART0, buff[i], true );
         }
-        ctx->gpr[ 0 ] = n;
+        ctx->gpr[ 0 ] = size;
         break;
       }
 
@@ -371,7 +371,7 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
         break;
       }
 
-      ctx->gpr[0] = read_pipe( pipe, buff, n );
+      ctx->gpr[0] = read_pipe( pipe, buff, size );
       break;
     }
 
