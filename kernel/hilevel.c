@@ -334,7 +334,7 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       }
 
       fd -= 3;
-      pipe_t *pipe = fds[fd];
+      pipe_t *pipe = curr_proc->fds[fd];
       if ( pipe == NULL ) {
         ctx->gpr[0] = -1;
         break;
@@ -365,7 +365,7 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       }
 
       fd -= 3;
-      pipe_t *pipe = fds[fd];
+      pipe_t *pipe = curr_proc->fds[fd];
       if ( pipe == NULL ) {
         ctx->gpr[0] = -1;
         break;
