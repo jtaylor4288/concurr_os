@@ -40,7 +40,7 @@ SECTIONS {
 
   /* allocate stack for user programs */
   bos_user = .;
-  .        = . + 0x0000f000;
+  .        = . + 0x00040000;
   tos_user = .;
 
 }

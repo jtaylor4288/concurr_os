@@ -8,7 +8,7 @@
 #include "hilevel.h"
 
 // The maximum number of allowed processes. This is static as the pcb is statically allocated
-#define PROC_LIMIT 15
+#define PROC_LIMIT 64
 #define STACK_SIZE 0x1000
 
 
@@ -19,6 +19,12 @@ size_t proc_count = 0;
 
 extern uint32_t tos_user;
 extern uint32_t bos_user;
+
+
+#define PIPE_LIMIT 32
+
+pipe_t pipe_array[PIPE_LIMIT];
+pipe_t *next_pipe = pipe_array;
 
 
 void init_pcb() {
@@ -73,6 +79,7 @@ typedef void(*void_fn)();
 
 // TODO: document this
 pcb_t* create_proc(void_fn pc) {
+  if ( proc_count == PROC_LIMIT ) return NULL;
   pcb_t *new_proc = &pcb[proc_count++];
 
   new_proc->status   = STATUS_READY;
@@ -85,6 +92,9 @@ pcb_t* create_proc(void_fn pc) {
 
   new_proc->priority = 0;
   new_proc->age      = 0;
+
+  memset( &new_proc->fds, 0, FD_LIMIT * sizeof( pipe_t ) );
+
   return new_proc;
 }
 
@@ -135,6 +145,95 @@ void scheduler( ctx_t *ctx ) {
 
   memcpy( ctx, &curr_proc->ctx, sizeof(ctx_t) );
   curr_proc->status = STATUS_EXECUTING;
+}
+
+
+void init_pipes() {
+  size_t i = 0;
+  while ( 1 ) {
+    memset( &pipe_array[i].name, 0, PIPE_NAME_MAX_LEN );
+    if ( i < PIPE_LIMIT - 1 ) {
+      pipe_array[i].next = &pipe_array[++i];
+    } else {
+      pipe_array[i].next = NULL;
+      break;
+    }
+  }
+}
+
+pipe_t* create_pipe( const char *name ) {
+  if ( next_pipe == NULL ) return NULL;
+
+  pipe_t *new_pipe = next_pipe;
+  next_pipe = new_pipe->next;
+
+  size_t len = strlen( name );
+  if ( len >= PIPE_NAME_MAX_LEN ) return NULL;
+  memset( &new_pipe->name, '\x00', PIPE_NAME_MAX_LEN );
+  memcpy( &new_pipe->name, name, len );
+
+  new_pipe->read = 0;
+  new_pipe->write = 0;
+  memset( &new_pipe->buff, '\x00', PIPE_BUFF_SIZE );
+
+  return new_pipe;
+}
+
+pipe_t* find_pipe( const char *name ) {
+  for ( size_t i = 0; i < PIPE_LIMIT; ++i ) {
+    if ( pipe_array[i].open_count != 0 && strcmp( pipe_array[i].name, name ) == 0 ) {
+      return &pipe_array[i];
+    }
+  }
+  return NULL;
+}
+
+void unlink_pipe( pipe_t *pipe ) {
+  memset( &pipe->name, '\x00', PIPE_NAME_MAX_LEN );
+}
+
+void remove_pipe( pipe_t *pipe ) {
+  unlink_pipe( pipe );
+  pipe->next = next_pipe;
+  next_pipe = pipe;
+}
+
+pipe_t* open_pipe( pipe_t *pipe ) {
+  pipe->open_count++;
+  return pipe;
+}
+
+void close_pipe( pipe_t *pipe ) {
+  pipe->open_count--;
+  if ( pipe->open_count == 0 ) {
+    remove_pipe( pipe );
+  }
+}
+
+int read_pipe( pipe_t *pipe, char *buff, size_t n ) {
+  if ( *(pipe->name) == '\x00' ) return -1;
+
+  int bytes_read = 0;
+  while ( pipe->read != pipe->write && bytes_read <= n) {
+    *(buff++) = pipe->buff[pipe->read];
+    pipe->read = ( pipe->read + 1 ) % PIPE_BUFF_SIZE;
+    ++bytes_read;
+  }
+  return bytes_read;
+}
+
+int write_pipe( pipe_t *pipe, const char *buff, size_t n ) {
+  if ( *(pipe->name) == '\x00' ) return -1;
+
+  int bytes_written = 0;
+  size_t next_write = ( pipe->write + 1 ) % PIPE_BUFF_SIZE;
+  while ( next_write != pipe->read && bytes_written <= n ) {
+    pipe->buff[pipe->write] = *(buff++);
+    pipe->write = next_write;
+    next_write = ( pipe->write + 1 ) % PIPE_BUFF_SIZE;
+    ++bytes_written;
+  }
+  return bytes_written;
 }
 
 
@@ -318,6 +417,83 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       pcb_t *to_change = get_by_pid( ctx->gpr[0] );
       if ( to_change ) {
         to_change->pid = ctx->gpr[1];
+      }
+      break;
+    }
+
+    case 0x08 : {
+      // open
+      //
+      // inputs: r0  const char*  name of the file to open
+      //
+      // output: r0  int          file descriptor
+
+      const char *name = (const char*) ctx->gpr[0];
+      pipe_t *file = find_pipe( name );
+      if ( file == NULL ) {
+        ctx->gpr[0] = -1;
+        break;
+      }
+      open_pipe( file );
+      for ( int fd = 0; fd < FD_LIMIT; ++fd ) {
+        if ( curr_proc->fds[fd] == NULL ) {
+          curr_proc->fds[fd] = file;
+          ctx->gpr[0] = fd + 3; // account for stds
+          return;
+        }
+      }
+      ctx->gpr[0] = -1;
+      break;
+    }
+
+    case 0x09 : {
+      // close
+      //
+      // inputs: r0  int  file descriptor to close
+      //
+      // output: r0  int  0 on success, -1 otherwise
+
+      int fd = ctx->gpr[0];
+      if ( fd < 3 ) {
+        ctx->gpr[0] = -1;
+        break;
+      }
+
+      fd -= 3;
+      pipe_t *file = curr_proc->fds[fd];
+      if ( file == NULL ) {
+        ctx->gpr[0] = -1;
+        break;
+      }
+      close_pipe( file );
+
+      ctx->gpr[0] = 0;
+      break;
+    }
+
+    case 0x0a : {
+      // mkfifo
+      //
+      // inputs: r0  const char*  Name of the new pipe
+      //
+      // output: r0  int          0 on success, -1 otherwise
+      pipe_t *new_pipe = create_pipe( (const char*) ctx->gpr[0] );
+      ctx->gpr[0] = new_pipe == NULL ? -1 : 0;
+      break;
+    }
+
+    case 0x0b : {
+      // unlink
+      //
+      // inputs: r0  const char*  Name of the pipe to unlink
+      //
+      // output: r0  int          0 on success, -1 otherwise
+      pipe_t *pipe = find_pipe( (const char*) ctx->gpr[0] );
+      if ( pipe == NULL ) {
+        ctx->gpr[0] = -1;
+      } else {
+        unlink_pipe( pipe );
+        ctx->gpr[0] = 0;
       }
       break;
     }
