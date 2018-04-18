@@ -39,6 +39,7 @@ extern void main_P4();
 extern void main_P5();
 extern void main_pipe_server();
 extern void main_pipe_client();
+extern void main_phil();
 
 void* load( char* x ) {
   if     ( 0 == strcmp( x, "P3" ) ) {
@@ -55,6 +56,9 @@ void* load( char* x ) {
   }
   else if( 0 == strcmp( x, "pipe_client" ) ) {
     return &main_pipe_client;
+  }
+  else if ( 0 == strcmp( x, "phil" ) ) {
+    return &main_phil;
   }
 
   return NULL;
