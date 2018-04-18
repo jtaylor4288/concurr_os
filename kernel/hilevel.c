@@ -93,7 +93,7 @@ pcb_t* create_proc(void_fn pc) {
   new_proc->priority = 0;
   new_proc->age      = 0;
 
-  memset( &new_proc->fds, 0, FD_LIMIT * sizeof( pipe_t ) );
+  memset( &new_proc->fds, 0, FD_LIMIT * sizeof( pipe_t* ) );
 
   return new_proc;
 }
