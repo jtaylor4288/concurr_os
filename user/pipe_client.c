@@ -1,6 +1,6 @@
 #include "libc.h"
 
-main_pipe_client() {
+void main_pipe_client() {
   int fd = open( "hello_world" );
   char buff[15];
   read( fd, buff, 15 );

@@ -1,9 +1,13 @@
 #include "libc.h"
 
-main_pipe_server() {
-  assert( mkfifo( "hello_world" ) == 0 );
+void main_pipe_server() {
+  if ( mkfifo( "hello_world" ) != 0 ){
+    write( 1, "aaa", 3 );
+  }
   int fd = open( "hello_world" );
   write( fd, "Hello, world!\n", 15 );
   close( fd );
-  assert( unlink( "hello_world" ) == 0 );
+  if ( unlink( "hello_world" ) != 0 ){
+    write( 1, "bbb", 3 );
+  }
 }
