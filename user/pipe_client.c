@@ -6,6 +6,7 @@ void main_pipe_client() {
   read( fd, buff, 15 );
   write( 1, buff, 15 );
   close( fd );
+  unlink( "hello_world" );
 
   exit( 0 );
 }

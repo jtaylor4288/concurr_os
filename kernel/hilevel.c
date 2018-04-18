@@ -189,8 +189,12 @@ pipe_t* find_pipe( const char *name ) {
   return NULL;
 }
 
+int pipe_is_removed( pipe_t *pipe ) {
+  return pipe->open_count == 0 && pipe->name[0] == '\x00';
+}
+
 void try_remove_pipe( pipe_t *pipe ) {
-  if ( pipe->open_count == 0 && pipe->name[0] == '\x00' ) {
+  if ( pipe_is_removed( pipe ) ) {
     pipe->next = next_pipe;
     next_pipe = pipe;
   }
@@ -212,7 +216,7 @@ void close_pipe( pipe_t *pipe ) {
 }
 
 int read_pipe( pipe_t *pipe, char *buff, size_t n ) {
-  if ( *(pipe->name) == '\x00' ) return -1;
+  if ( pipe_is_removed( pipe ) ) return -1;
 
   int bytes_read = 0;
   while ( pipe->read != pipe->write && bytes_read <= n) {
@@ -224,7 +228,7 @@ int read_pipe( pipe_t *pipe, char *buff, size_t n ) {
 }
 
 int write_pipe( pipe_t *pipe, const char *buff, size_t n ) {
-  if ( *(pipe->name) == '\x00' ) return -1;
+  if ( pipe_is_removed( pipe ) ) return -1;
 
   int bytes_written = 0;
   size_t next_write = ( pipe->write + 1 ) % PIPE_BUFF_SIZE;
@@ -317,15 +321,26 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       //         r2  size_t       size of buffer
       //
       // output: r0  int          number of bytes written
-      int  fd = ( int ) ( ctx->gpr[ 0 ] );
-      char *c = ( char* ) ( ctx->gpr[ 1 ] );
-      int   n = ( int ) ( ctx->gpr[ 2 ] );
+      int  fd   = ( int )   ( ctx->gpr[ 0 ] );
+      char buff = ( char* ) ( ctx->gpr[ 1 ] );
+      int  size = ( int )   ( ctx->gpr[ 2 ] );
 
-      for ( int i = 0; i < n; ++i ) {
-        PL011_putc( UART0, *c++, true );
+      if ( fd < 3 ) {
+        for ( int i = 0; i < n; ++i ) {
+          PL011_putc( UART0, buff[i], true );
+        }
+        ctx->gpr[ 0 ] = n;
+        break;
       }
 
-      ctx->gpr[ 0 ] = n;
+      fd -= 3;
+      pipe_t *pipe = fds[fd];
+      if ( pipe == NULL ) {
+        ctx->gpr[0] = -1;
+        break;
+      }
+
+      ctx->gpr[0] = write_pipe( pipe, buff, n );
       break;
     }
 
@@ -337,9 +352,26 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       //         r2  size_t  number of bytes to read
       //
       // output: r0  int     number of bytes read
+      int  fd   = ( int )   ( ctx->gpr[ 0 ] );
+      char buff = ( char* ) ( ctx->gpr[ 1 ] );
+      int  size = ( int )   ( ctx->gpr[ 2 ] );
 
-      // TODO: implement this
-      ctx->gpr[0] = 0;
+      if ( fd < 3 ) {
+        for ( int i = 0; i < n; ++i ) {
+          PL011_putc( UART0, buff[i], true );
+        }
+        ctx->gpr[ 0 ] = n;
+        break;
+      }
+
+      fd -= 3;
+      pipe_t *pipe = fds[fd];
+      if ( pipe == NULL ) {
+        ctx->gpr[0] = -1;
+        break;
+      }
+
+      ctx->gpr[0] = read_pipe( pipe, buff, n );
       break;
     }
 
