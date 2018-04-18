@@ -488,12 +488,14 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       // inputs: r0  const char*  Name of the pipe to unlink
       //
       // output: r0  int          0 on success, -1 otherwise
-      pipe_t *pipe = find_pipe( (const char*) ctx->gpr[0] );
-      if ( pipe == NULL ) {
-        ctx->gpr[0] = -1;
-      } else {
-        unlink_pipe( pipe );
-        ctx->gpr[0] = 0;
+      // pipe_t *pipe = find_pipe( (const char*) ctx->gpr[0] );
+      const char *name = (const char*) ( ctx->gpr[0] );
+      ctx->gpr[0] = -1;
+      for ( size_t i = 0; i < PIPE_LIMIT; ++i ) {
+        if ( strcmp( pipe_array[i].name, name ) == 0 ) {
+          unlink_pipe( &pipe_array[i] );
+          ctx->gpr[0] = 0;
+        }
       }
       break;
     }
