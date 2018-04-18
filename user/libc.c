@@ -151,8 +151,8 @@ void nice( int pid, int x ) {
 int open( const char *path ) {
   int r;
 
-  asm volatile( "mov r0, %1 \n"
-                "svc %0     \n"
+  asm volatile( "mov r0, %2 \n"
+                "svc %1     \n"
               : "=r" (r)
               : "I" (SYS_OPEN), "r" (path)
               : "r0" );
@@ -162,8 +162,8 @@ int open( const char *path ) {
 int close( int fd ) {
   int r;
 
-  asm volatile( "mov r0, %1 \n"
-                "svc %0     \n"
+  asm volatile( "mov r0, %2 \n"
+                "svc %1     \n"
               : "=r" (r)
               : "I" (SYS_CLOSE), "r" (fd)
               : "r0" );
@@ -173,8 +173,8 @@ int close( int fd ) {
 int mkfifo( const char *path ) {
   int r;
 
-  asm volatile( "mov r0, %1 \n"
-                "svc %0     \n"
+  asm volatile( "mov r0, %2 \n"
+                "svc %1     \n"
               : "=r" (r)
               : "I" (SYS_MKFIFO), "r" (path)
               : "r0" );
@@ -184,8 +184,8 @@ int mkfifo( const char *path ) {
 int unlink( const char *path ) {
   int r;
 
-  asm volatile( "mov r0, %1 \n"
-                "svc %0     \n"
+  asm volatile( "mov r0, %2 \n"
+                "svc %1     \n"
               : "=r" (r)
               : "I" (SYS_UNLINK), "r" (path)
               : "r0" );
