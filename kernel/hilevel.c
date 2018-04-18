@@ -21,7 +21,7 @@ extern uint32_t tos_user;
 extern uint32_t bos_user;
 
 
-#define PIPE_LIMIT 32
+#define PIPE_LIMIT 64
 
 pipe_t pipe_array[PIPE_LIMIT];
 pipe_t *next_pipe = &pipe_array[0];
@@ -100,6 +100,7 @@ pcb_t* create_proc(void_fn pc) {
 
 
 // TODO: document this
+// TODO: close open file descriptors
 void remove_proc( pcb_t *to_remove ) {
   if ( to_remove == NULL ) return;
 
@@ -218,27 +219,25 @@ void close_pipe( pipe_t *pipe ) {
 int read_pipe( pipe_t *pipe, char *buff, size_t n ) {
   if ( pipe_is_removed( pipe ) ) return -1;
 
-  int bytes_read = 0;
-  while ( pipe->read != pipe->write && bytes_read <= n) {
-    *(buff++) = pipe->buff[pipe->read];
-    pipe->read = ( pipe->read + 1 ) % PIPE_BUFF_SIZE;
-    ++bytes_read;
+  int b = 0;
+  while ( pipe->read != pipe->write && b < n ) {
+    buff[ b++ ] = pipe->buff[ pipe->read++ ];
+    pipe->read %= PIPE_BUFF_SIZE;
   }
-  return bytes_read;
+  return b;
 }
 
 int write_pipe( pipe_t *pipe, const char *buff, size_t n ) {
   if ( pipe_is_removed( pipe ) ) return -1;
 
-  int bytes_written = 0;
+  int b = 0;
   size_t next_write = ( pipe->write + 1 ) % PIPE_BUFF_SIZE;
-  while ( next_write != pipe->read && bytes_written <= n ) {
-    pipe->buff[pipe->write] = *(buff++);
-    pipe->write = next_write;
-    next_write = ( pipe->write + 1 ) % PIPE_BUFF_SIZE;
-    ++bytes_written;
+  while ( next_write != pipe->read && b < n ) {
+    pipe->buff[ pipe->write ] = buff[ b++ ];
+    pipe->write = next_write++;
+    next_write %= PIPE_BUFF_SIZE;
   }
-  return bytes_written;
+  return b;
 }
 
 
@@ -256,6 +255,7 @@ void hilevel_handler_rst( ctx_t *ctx ) {
   printstr("Hello!\n");
 
   init_pcb();
+  init_pipes();
 
   pcb_t *console = create_proc( &main_console );
   memcpy( ctx, &console->ctx, sizeof( ctx_t ) );
