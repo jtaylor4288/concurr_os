@@ -180,22 +180,25 @@ pipe_t* create_pipe( const char *name ) {
 }
 
 pipe_t* find_pipe( const char *name ) {
+  if ( name[0] == '\x00' ) return NULL;
   for ( size_t i = 0; i < PIPE_LIMIT; ++i ) {
-    if ( pipe_array[i].open_count != 0 && strcmp( pipe_array[i].name, name ) == 0 ) {
+    if ( strcmp( pipe_array[i].name, name ) == 0 ) {
       return &pipe_array[i];
     }
   }
   return NULL;
 }
 
-void unlink_pipe( pipe_t *pipe ) {
-  memset( &pipe->name, '\x00', PIPE_NAME_MAX_LEN );
+void try_remove_pipe( pipe_t *pipe ) {
+  if ( pipe->open_count == 0 && pipe->name[0] == '\x00' ) {
+    pipe->next = next_pipe;
+    next_pipe = pipe;
+  }
 }
 
-void remove_pipe( pipe_t *pipe ) {
-  unlink_pipe( pipe );
-  pipe->next = next_pipe;
-  next_pipe = pipe;
+void unlink_pipe( pipe_t *pipe ) {
+  memset( &pipe->name, '\x00', PIPE_NAME_MAX_LEN );
+  try_remove_pipe( pipe );
 }
 
 pipe_t* open_pipe( pipe_t *pipe ) {
@@ -205,9 +208,7 @@ pipe_t* open_pipe( pipe_t *pipe ) {
 
 void close_pipe( pipe_t *pipe ) {
   pipe->open_count--;
-  if ( pipe->open_count == 0 ) {
-    remove_pipe( pipe );
-  }
+  try_remove_pipe( pipe );
 }
 
 int read_pipe( pipe_t *pipe, char *buff, size_t n ) {
@@ -463,11 +464,10 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       pipe_t *file = curr_proc->fds[fd];
       if ( file == NULL ) {
         ctx->gpr[0] = -1;
-        break;
+      } else {
+        close_pipe( file );
+        ctx->gpr[0] = 0;
       }
-      close_pipe( file );
-
-      ctx->gpr[0] = 0;
       break;
     }
 
@@ -490,12 +490,12 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       // output: r0  int          0 on success, -1 otherwise
       // pipe_t *pipe = find_pipe( (const char*) ctx->gpr[0] );
       const char *name = (const char*) ( ctx->gpr[0] );
-      ctx->gpr[0] = -1;
-      for ( size_t i = 0; i < PIPE_LIMIT; ++i ) {
-        if ( strcmp( pipe_array[i].name, name ) == 0 ) {
-          unlink_pipe( &pipe_array[i] );
-          ctx->gpr[0] = 0;
-        }
+      pipe_t *pipe = find_pipe( name );
+      if ( pipe == NULL ) {
+        ctx->gpr[0] = -1;
+      } else {
+        unlink_pipe( pipe );
+        ctx->gpr[0] = 0;
       }
       break;
     }

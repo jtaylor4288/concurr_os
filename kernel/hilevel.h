@@ -58,9 +58,9 @@ typedef struct {
 
 struct pipe_t {
   uint32_t open_count;
+  char name[PIPE_NAME_MAX_LEN];
   union {
     struct {
-        char name[PIPE_NAME_MAX_LEN];
       size_t read;
       size_t write;
         char buff[PIPE_BUFF_SIZE];
