@@ -153,6 +153,7 @@ int open( const char *path ) {
 
   asm volatile( "mov r0, %2 \n"
                 "svc %1     \n"
+                "mov %0, r0 \n"
               : "=r" (r)
               : "I" (SYS_OPEN), "r" (path)
               : "r0" );
@@ -164,6 +165,7 @@ int close( int fd ) {
 
   asm volatile( "mov r0, %2 \n"
                 "svc %1     \n"
+                "mov %0, r0 \n"
               : "=r" (r)
               : "I" (SYS_CLOSE), "r" (fd)
               : "r0" );
@@ -175,6 +177,7 @@ int mkfifo( const char *path ) {
 
   asm volatile( "mov r0, %2 \n"
                 "svc %1     \n"
+                "mov %0, r0 \n"
               : "=r" (r)
               : "I" (SYS_MKFIFO), "r" (path)
               : "r0" );
@@ -186,6 +189,7 @@ int unlink( const char *path ) {
 
   asm volatile( "mov r0, %2 \n"
                 "svc %1     \n"
+                "mov %0, r0 \n"
               : "=r" (r)
               : "I" (SYS_UNLINK), "r" (path)
               : "r0" );

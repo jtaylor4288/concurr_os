@@ -10,4 +10,6 @@ void main_pipe_server() {
   if ( unlink( "hello_world" ) != 0 ){
     write( 1, "bbb", 3 );
   }
+
+  exit( 0 );
 }

@@ -24,7 +24,7 @@ extern uint32_t bos_user;
 #define PIPE_LIMIT 32
 
 pipe_t pipe_array[PIPE_LIMIT];
-pipe_t *next_pipe = pipe_array;
+pipe_t *next_pipe = &pipe_array[0];
 
 
 void init_pcb() {
