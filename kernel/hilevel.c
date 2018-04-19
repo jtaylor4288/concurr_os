@@ -150,6 +150,21 @@ void scheduler( ctx_t *ctx ) {
   curr_proc->status = STATUS_EXECUTING;
 }
 
+
+void init_timer() {
+  TIMER0->Timer1Load  = 0x00000100; // select period = 2^20 ticks ~= 1 sec
+  TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
+  TIMER0->Timer1Ctrl |= 0x00000040; // select periodic timer
+  TIMER0->Timer1Ctrl |= 0x00000020; // enable          timer interrupt
+  TIMER0->Timer1Ctrl |= 0x00000080; // enable          timer
+
+  GICC0->PMR          = 0x000000F0; // unmask all            interrupts
+  GICD0->ISENABLER1  |= 0x00000010; // enable timer          interrupt
+  GICC0->CTLR         = 0x00000001; // enable GIC interface
+  GICD0->CTLR         = 0x00000001; // enable GIC distributor
+}
+
+
 extern void main_console();
 
 void printstr(const char *c) {
@@ -165,22 +180,12 @@ void hilevel_handler_rst( ctx_t *ctx ) {
 
   init_pcb();
   init_pipes();
+  init_timer();
 
   pcb_t *console = create_proc( &main_console );
   memcpy( ctx, &console->ctx, sizeof( ctx_t ) );
   console->status = STATUS_EXECUTING;
   curr_proc = console;
-
-  TIMER0->Timer1Load  = 0x00100000; // select period = 2^20 ticks ~= 1 sec
-  TIMER0->Timer1Ctrl  = 0x00000002; // select 32-bit   timer
-  TIMER0->Timer1Ctrl |= 0x00000040; // select periodic timer
-  TIMER0->Timer1Ctrl |= 0x00000020; // enable          timer interrupt
-  TIMER0->Timer1Ctrl |= 0x00000080; // enable          timer
-
-  GICC0->PMR          = 0x000000F0; // unmask all            interrupts
-  GICD0->ISENABLER1  |= 0x00000010; // enable timer          interrupt
-  GICC0->CTLR         = 0x00000001; // enable GIC interface
-  GICD0->CTLR         = 0x00000001; // enable GIC distributor
 
   int_enable_irq();
 
