@@ -26,6 +26,7 @@
 #include     "int.h"
 
 #include "pipe.h"
+#include "display.h"
 
 typedef int pid_t;
 

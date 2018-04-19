@@ -173,7 +173,6 @@ void printstr(const char *c) {
   }
 }
 
-
 void hilevel_handler_rst( ctx_t *ctx ) {
 
   printstr("Hello!\n");
@@ -181,6 +180,7 @@ void hilevel_handler_rst( ctx_t *ctx ) {
   init_pcb();
   init_pipes();
   init_timer();
+  init_display();
 
   pcb_t *console = create_proc( &main_console );
   memcpy( ctx, &console->ctx, sizeof( ctx_t ) );
