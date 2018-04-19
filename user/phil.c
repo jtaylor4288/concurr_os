@@ -65,7 +65,7 @@ void main_phil() {
   state fork_r = c < r ? dirty : none ;
 
   char _c;
-  char msg[12] = "_: spaghet\n";
+  char msg[14] = "_: spaghetti\n";
   msg[0] = c;
 
   while ( 1 ) {
@@ -87,7 +87,7 @@ void main_phil() {
 
     if ( fork_l == clean && fork_r == clean ) {
       fork_l = fork_r = dirty;
-      write( 1, msg, 11 );
+      write( 1, msg, 13 );
     }
     yield();
   }

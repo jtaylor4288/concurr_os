@@ -28,7 +28,7 @@ by the assignment description of course).  Let us know what third-party
 source code or resources you used (if any) so it's clear what's your work
 and what isn't:
 
-[...]
+[ 27 ]
 
 -------------------------------------------------------------------------------
 
@@ -47,7 +47,7 @@ generality, realism, or style of a solution.
 
     Stage 2 : closed generalisations and enhancements
 [X]           - fork, exec and exit system calls                     ( 15%)
-[?]           - Inter-Process Communication (IPC)                    ( 15%)
+[X]           - Inter-Process Communication (IPC)                    ( 15%)
 
     Stage 3 : open   generalisations and enhancements                ( 30%)
 [?]           - MMU-based protection and virtualisation
