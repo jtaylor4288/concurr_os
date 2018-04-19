@@ -150,16 +150,11 @@ void scheduler( ctx_t *ctx ) {
 
 
 void init_pipes() {
-  size_t i = 0;
-  while ( 1 ) {
-    memset( &pipe_array[i].name, 0, PIPE_NAME_MAX_LEN );
-    if ( i < PIPE_LIMIT - 1 ) {
-      pipe_array[i].next = &pipe_array[++i];
-    } else {
-      pipe_array[i].next = NULL;
-      break;
-    }
+  memset( pipe_array, 0, PIPE_LIMIT * sizeof( pipe_t ) );
+  for ( size_t i = 0; i < PIPE_LIMIT; ++i ) {
+    pipe_array[i].next = &pipe_array[i+1];
   }
+  pipe_array[PIPE_LIMIT-1].next = NULL;
 }
 
 pipe_t* create_pipe( const char *name ) {
