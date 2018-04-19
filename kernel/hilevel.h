@@ -16,7 +16,6 @@
 
 #include <string.h>
 
-// TODO: Figure out what each one does
 #include   "GIC.h"
 #include "PL011.h"
 #include "SP804.h"
@@ -25,6 +24,8 @@
 
 #include "lolevel.h"
 #include     "int.h"
+
+#include "pipe.h"
 
 typedef int pid_t;
 
@@ -40,7 +41,6 @@ typedef struct {
   uint32_t cpsr, pc, gpr[13], sp, lr;
 } ctx_t;
 
-typedef struct pipe_t pipe_t;
 #define FD_LIMIT 16
 
 typedef struct {
@@ -52,21 +52,5 @@ typedef struct {
    // TODO: Add read/write flags
    pipe_t* fds[FD_LIMIT];
 } pcb_t;
-
-#define PIPE_BUFF_SIZE 64
-#define PIPE_NAME_MAX_LEN 16
-
-struct pipe_t {
-  uint32_t open_count;
-  char name[PIPE_NAME_MAX_LEN];
-  union {
-    struct {
-      size_t read;
-      size_t write;
-        char buff[PIPE_BUFF_SIZE];
-    };
-    pipe_t *next;
-  };
-};
 
 #endif
