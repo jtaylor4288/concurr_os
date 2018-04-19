@@ -3,11 +3,14 @@
 #define PIPE_LIMIT 64
 
 pipe_t pipe_array[PIPE_LIMIT];
-pipe_t *next_pipe = &pipe_array[0];
+
+// The head of the linked list of dead pipes
+pipe_t *next_pipe = NULL;
 
 
 void init_pipes() {
   memset( pipe_array, 0, PIPE_LIMIT * sizeof( pipe_t ) );
+  next_pipe = &pipe_array[0];
   for ( size_t i = 0; i < PIPE_LIMIT; ++i ) {
     pipe_array[i].next = &pipe_array[i+1];
   }
@@ -34,13 +37,13 @@ pipe_t* create_pipe( const char *name ) {
 }
 
 
-bool pipe_is_removed( pipe_t *pipe ) {
+bool pipe_is_dead( pipe_t *pipe ) {
   return pipe->open_count == 0 && pipe->name[0] == '\x00';
 }
 
 
 void try_remove_pipe( pipe_t *pipe ) {
-  if ( pipe_is_removed( pipe ) ) {
+  if ( pipe_is_dead( pipe ) ) {
     pipe->next = next_pipe;
     next_pipe = pipe;
   }
@@ -77,7 +80,7 @@ void close_pipe( pipe_t *pipe ) {
 
 
 int read_pipe( pipe_t *pipe, char *buff, size_t n ) {
-  if ( pipe_is_removed( pipe ) ) return -1;
+  if ( pipe_is_dead( pipe ) ) return -1;
 
   int b = 0;
   while ( pipe->read != pipe->write && b < n ) {
@@ -89,7 +92,7 @@ int read_pipe( pipe_t *pipe, char *buff, size_t n ) {
 
 
 int write_pipe( pipe_t *pipe, const char *buff, size_t n ) {
-  if ( pipe_is_removed( pipe ) ) return -1;
+  if ( pipe_is_dead( pipe ) ) return -1;
 
   int b = 0;
   size_t next_write = ( pipe->write + 1 ) % PIPE_BUFF_SIZE;
