@@ -49,7 +49,6 @@ typedef struct {
      ctx_t ctx;
        int priority;
        int age;
-   // TODO: Add read/write flags
    pipe_t* fds[FD_LIMIT];
 } pcb_t;
 

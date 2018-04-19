@@ -199,7 +199,7 @@ void hilevel_handler_irq( ctx_t *ctx ) {
     }
 
     default: {
-      // Look up other codes?
+      //
     }
   }
 
