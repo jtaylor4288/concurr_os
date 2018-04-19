@@ -335,6 +335,9 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       if ( to_remove ) {
         remove_proc( to_remove );
         ctx->gpr[0] = 0;
+        if ( to_remove == curr_proc ) {
+          scheduler( ctx );
+        }
       } else {
         ctx->gpr[0] = -1;
       }
