@@ -41,7 +41,6 @@ uint32_t get_tos( uint32_t sp ) {
 }
 
 
-// TODO: document this
 pcb_t* get_by_pid( pid_t pid ) {
   for ( size_t i = 0; i < proc_count; ++i ) {
     if ( pcb[i].pid == pid ) return &pcb[i];
@@ -70,8 +69,6 @@ void pick_next_proc() {
 
 typedef void(*void_fn)();
 
-
-// TODO: document this
 pcb_t* create_proc(void_fn pc) {
   if ( proc_count == PROC_LIMIT ) return NULL;
   pcb_t *new_proc = &pcb[proc_count++];
@@ -93,12 +90,16 @@ pcb_t* create_proc(void_fn pc) {
 }
 
 
-// TODO: document this
-// TODO: close open file descriptors
 void remove_proc( pcb_t *to_remove ) {
   if ( to_remove == NULL ) return;
 
   to_remove->ctx.sp = get_tos( to_remove->ctx.sp );
+
+  for ( size_t i = 0; i < FD_LIMIT; ++i ) {
+    if ( to_remove->fds[i] != NULL ) {
+      close_pipe( to_remove->fds[i] );
+    }
+  }
 
   pcb_t *to_swap = &pcb[--proc_count];
   if ( to_swap == to_remove ) return;
@@ -126,6 +127,13 @@ pcb_t* duplicate_proc( pcb_t *src_proc ) {
 
   uint32_t stack_delta = (uint32_t)(tos_src) - src_proc->ctx.sp;
   dst_proc->ctx.sp -= stack_delta;
+
+  for ( size_t i = 0; i < FD_LIMIT; ++i ) {
+    dst_proc->fds[i] = src_proc->fds[i];
+    if ( dst_proc->fds[i] != NULL ) {
+      open_pipe( dst_proc->fds[i] );
+    }
+  }
 
   return dst_proc;
 }
