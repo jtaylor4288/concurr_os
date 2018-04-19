@@ -34,7 +34,7 @@ pipe_t* create_pipe( const char *name ) {
 }
 
 
-int pipe_is_removed( pipe_t *pipe ) {
+bool pipe_is_removed( pipe_t *pipe ) {
   return pipe->open_count == 0 && pipe->name[0] == '\x00';
 }
 

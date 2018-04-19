@@ -2,6 +2,13 @@
 #define __PIPE_H
 
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <string.h>
+
+
 #define PIPE_BUFF_SIZE 64
 #define PIPE_NAME_MAX_LEN 16
 
@@ -26,7 +33,7 @@ struct pipe_t {
 void init_pipes();
 
 pipe_t* create_pipe( const char *name );
-int pipe_is_removed( pipe_t *pipe );
+bool pipe_is_removed( pipe_t *pipe );
 void try_remove_pipe( pipe_t *pipe );
 void unlink_pipe( pipe_t *pipe );
 
