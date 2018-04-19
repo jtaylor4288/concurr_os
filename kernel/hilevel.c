@@ -332,12 +332,9 @@ void hilevel_handler_svc( ctx_t *ctx, uint32_t id ) {
       //
       // output: r0  int  0 on success, -1 on error
       pcb_t *to_remove = get_by_pid( ctx->gpr[0] );
-      if ( to_remove ) {
+      if ( to_remove != NULL && to_remove != curr_proc ) {
         remove_proc( to_remove );
         ctx->gpr[0] = 0;
-        if ( to_remove == curr_proc ) {
-          scheduler( ctx );
-        }
       } else {
         ctx->gpr[0] = -1;
       }
