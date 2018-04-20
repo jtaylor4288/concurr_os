@@ -27,6 +27,7 @@
 
 #include "pipe.h"
 #include "display.h"
+#include "kernel_event.h"
 
 typedef int pid_t;
 

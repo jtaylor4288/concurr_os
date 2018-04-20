@@ -203,6 +203,16 @@ void hilevel_handler_irq( ctx_t *ctx ) {
       break;
     }
 
+    case GIC_SOURCE_PS20: {
+      on_kernel_event_keyboard();
+      break;
+    }
+
+    case GIC_SOURCE_PS21: {
+      on_kernel_event_mouse();
+      break;
+    }
+
     default: {
       //
     }
