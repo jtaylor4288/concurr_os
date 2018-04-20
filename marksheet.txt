@@ -81,10 +81,14 @@ Stage 3:
   exist which are flipped in order to update the display to prevent screen
   tearing.
 
-  There is support for mouse movement and button presses but no support for
+  There is support for mouse button presses but no support for movement or
   keyboard events.
 
-  A demonstration can be seen in the 'rainbow' program. This cycles through
-  colours on the display when clicked.
+  A demonstration can be seen in the 'mouse' program. This should set the
+  screen to a different colour depending on the button:
+
+    Left   - Red
+    Middle - Green
+    Right  - Blue
 
 -------------------------------------------------------------------------------
