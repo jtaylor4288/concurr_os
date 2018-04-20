@@ -11,15 +11,21 @@ typedef enum {
 } EventType;
 
 typedef struct {
-  int8_t dx, dy;
+  // unimplemented
 } EventMouseMove;
 
+typedef enum {
+  ButtonLeft   = 0b001,
+  ButtonRight  = 0b010,
+  ButtonMiddle = 0b100
+} ButtonState;
+
 typedef struct {
-  enum { ButtonLeft, ButtonRight, ButtonMiddle } button;
+  ButtonState button;
 } EventMouseButtonPress;
 
 typedef struct {
-  //
+  ButtonState button;
 } EventMouseButtonRelease;
 
 typedef struct {
@@ -27,8 +33,8 @@ typedef struct {
 
   union {
              EventMouseMove mouse_move;
-      EventMouseButtonPress mouse_button_press;
-    EventMouseButtonRelease mouse_button_release;
+      EventMouseButtonPress mouse_press;
+    EventMouseButtonRelease mouse_release;
   };
 
 } Event;
