@@ -16,7 +16,7 @@
 So that we can calibrate and improve the assignment in the future, give us
 a rough idea how long (in hours) you spent on it *in total*:
 
-effort : [...] hours
+effort : [ 35 ] hours
 
 -------------------------------------------------------------------------------
 
@@ -28,7 +28,9 @@ by the assignment description of course).  Let us know what third-party
 source code or resources you used (if any) so it's clear what's your work
 and what isn't:
 
-[ 27 ]
+https://en.wikipedia.org/wiki/Dining_philosophers_problem#Chandy/Misra_solution
+  The solution to the Dining Philosophers problem is the Chandy/Misra solution
+  taken from the Wikipedia page.
 
 -------------------------------------------------------------------------------
 
@@ -52,7 +54,7 @@ generality, realism, or style of a solution.
     Stage 3 : open   generalisations and enhancements                ( 30%)
 [?]           - MMU-based protection and virtualisation
                 *OR*
-[?]           - LCD screen and PS/2 device drivers and GUI
+[X]           - LCD screen and PS/2 device drivers and GUI
                 *OR*
 [?]           - file system based on simplified, emulated disk
                 *OR*
