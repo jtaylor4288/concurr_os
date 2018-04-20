@@ -54,7 +54,7 @@ generality, realism, or style of a solution.
     Stage 3 : open   generalisations and enhancements                ( 30%)
 [?]           - MMU-based protection and virtualisation
                 *OR*
-[X]           - LCD screen and PS/2 device drivers and GUI
+[*]           - LCD screen and PS/2 device drivers and GUI
                 *OR*
 [?]           - file system based on simplified, emulated disk
                 *OR*
@@ -71,6 +71,20 @@ Any other documentation, notes or comments that you think are important or
 might be easy to overlook (e.g., a subtle issue or technique in associated
 source code) should go here:
 
-[...]
+Stage 2:
+  In order to run the Dining Philosophers program, execute the program
+  'phil' in the console. Each philosopher is labelled from 0 to f and will
+  print "x: spaghetti" when eating where x is their label.
+
+Stage 3:
+  The display works and supports programs writing into a buffer. Two buffers
+  exist which are flipped in order to update the display to prevent screen
+  tearing.
+
+  There is support for mouse movement and button presses but no support for
+  keyboard events.
+
+  A demonstration can be seen in the 'rainbow' program. This cycles through
+  colours on the display when clicked.
 
 -------------------------------------------------------------------------------
